@@ -3,7 +3,6 @@ package makegenesis
 import (
 	"bufio"
 	"bytes"
-	"crypto/ecdsa"
 	"io"
 	"math/big"
 	"os"
@@ -24,7 +23,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (
@@ -132,12 +130,11 @@ func GetValidators(num int) gpos.Validators {
 
 	for i := 1; i <= num; i++ {
 		key := GetKey(i)
-		addr := crypto.PubkeyToAddress(key.PublicKey)
-		pubkeyraw := crypto.FromECDSAPub(&key.PublicKey)
+		pubkeyraw := key
 		validatorID := idx.ValidatorID(i)
 		validators = append(validators, gpos.Validator{
 			ID:      validatorID,
-			Address: addr,
+			Address: GetAddress(i),
 			PubKey: validatorpk.PubKey{
 				Raw:  pubkeyraw,
 				Type: validatorpk.Types.Secp256k1,
@@ -154,18 +151,20 @@ func GetValidators(num int) gpos.Validators {
 }
 
 // gets private key X from file
-func GetKey(num int) *ecdsa.PrivateKey {
+func GetKey(num int) []byte {
 	lines, err := readLines("pks.txt")
 	if err != nil {
 		panic(err)
 	}
+	return []byte(lines[num-1])
+}
 
-	key, err := crypto.HexToECDSA(lines[num-1])
+func GetAddress(num int) common.Address {
+	lines, err := readLines("addresses.txt")
 	if err != nil {
 		panic(err)
 	}
-
-	return key
+	return common.BytesToAddress([]byte(lines[num-1]))
 }
 
 // Read a whole file into the memory and store it as array of lines
