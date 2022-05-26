@@ -74,7 +74,7 @@ func CreateGenesisStore(validatorBalance *big.Int, validatorStake *big.Int) *gen
 		TotalSupply:   totalSupply,
 	})
 	ownerBalance := new(big.Int)
-	ownerBalance.SetString("49800000000000000000000000000", 10)
+	ownerBalance.SetString("47800000000000000000000000000", 10)
 
 	genStore.SetEvmAccount(common.HexToAddress("0xf9b4f517792acfb86e714eb64525d61bc3d4e089"), genesis.Account{
 		Code:    []byte{},
