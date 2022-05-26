@@ -12,7 +12,7 @@ import (
 func main() {
 	// const validatorBalance = uint64(1000000 * 1e18)
 	validatorStakedAmt := new(big.Int)
-	validatorStakedAmt.SetString("10000000000000000000000000", 10)
+	validatorStakedAmt.SetString("1000000", 10)
 
 	validatorBalance := new(big.Int)
 	validatorBalance.SetString("10000000000000000000", 10)
