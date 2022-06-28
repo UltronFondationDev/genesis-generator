@@ -30,7 +30,7 @@ import (
 var (
 	//	GenesisTime = inter.Timestamp(1651363200 * time.Second)
 	GenesisTime = inter.Timestamp(time.Now().UnixNano()) // use current time to avoid waiting for your validators to start
-	NetworkName = "ultron"
+	NetworkName = "ultron-testnet"
 )
 
 func CreateGenesisStore(validatorBalance *big.Int, validatorStake *big.Int) *genesisstore.Store {
@@ -75,7 +75,7 @@ func CreateGenesisStore(validatorBalance *big.Int, validatorStake *big.Int) *gen
 		TotalSupply:   totalSupply,
 	})
 	ownerBalance := new(big.Int)
-	ownerBalance.SetString("47800000000000000000000000000", 10)
+	ownerBalance.SetString("47800000000000000000000000000", 10) //47.8 billions ulx
 
 	genStore.SetEvmAccount(common.HexToAddress("0xf9b4f517792acfb86e714eb64525d61bc3d4e089"), genesis.Account{
 		Code:    []byte{},

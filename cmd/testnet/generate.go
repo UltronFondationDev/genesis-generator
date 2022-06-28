@@ -12,10 +12,10 @@ import (
 func main() {
 	// const validatorBalance = uint64(1000000 * 1e18)
 	validatorStakedAmt := new(big.Int)
-	validatorStakedAmt.SetString("20000000000000000000000000", 10)
+	validatorStakedAmt.SetString("100000000000000000000000000", 10) //100 millions ulx * 2 validators
 
 	validatorBalance := new(big.Int)
-	validatorBalance.SetString("10000000000000000000", 10)
+	validatorBalance.SetString("10000000000000000000", 10) //10 ulx
 
 	gStore := makegenesis.CreateGenesisStore(validatorBalance, validatorStakedAmt)
 
