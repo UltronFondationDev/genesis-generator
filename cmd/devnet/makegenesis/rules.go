@@ -14,8 +14,8 @@ const (
 
 func CreateRules() opera.Rules {
 	return opera.Rules{
-		Name:      "ultron-testnet",
-		NetworkID: 0x4ce, //1230
+		Name:      "ultron-devnet",
+		NetworkID: 0x300c, //12300
 		Dag: opera.DagRules{
 			MaxParents:     10,
 			MaxFreeParents: 3,

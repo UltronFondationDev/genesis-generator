@@ -30,7 +30,7 @@ import (
 var (
 	//	GenesisTime = inter.Timestamp(1651363200 * time.Second)
 	GenesisTime = inter.Timestamp(time.Now().UnixNano()) // use current time to avoid waiting for your validators to start
-	NetworkName = "ultron-testnet"
+	NetworkName = "ultron-devnet"
 )
 
 func CreateGenesisStore(validatorBalance *big.Int, validatorStake *big.Int) *genesisstore.Store {

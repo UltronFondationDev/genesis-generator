@@ -1,4 +1,4 @@
-module testnet_genesis
+module devnet_genesis
 
 go 1.14
 
