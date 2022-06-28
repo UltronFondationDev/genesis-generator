@@ -1,4 +1,4 @@
-module github.com/bma-ftm
+module testnet_genesis
 
 go 1.14
 

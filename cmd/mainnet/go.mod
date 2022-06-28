@@ -1,4 +1,4 @@
-module github.com/bma-ftm
+module mainnet_genesis
 
 go 1.14
 

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/Fantom-foundation/go-opera/opera/genesisstore"
-	"github.com/bma-ftm/makegenesis"
+	"mainnet_genesis/makegenesis"
 )
 
 func main() {
