@@ -1,14 +1,8 @@
-package makegenesis
+package generator
 
 import (
-	"bufio"
-	"bytes"
+	"context"
 	"crypto/ecdsa"
-	"io"
-	"math/big"
-	"os"
-	"time"
-
 	"github.com/Fantom-foundation/go-opera/inter"
 	"github.com/Fantom-foundation/go-opera/inter/validatorpk"
 	"github.com/Fantom-foundation/go-opera/opera/genesis"
@@ -21,37 +15,40 @@ import (
 	"github.com/Fantom-foundation/go-opera/opera/genesisstore"
 	"github.com/Fantom-foundation/lachesis-base/hash"
 	"github.com/Fantom-foundation/lachesis-base/inter/idx"
+	"github.com/UltronFoundationDev/genesis-generator/configs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"math/big"
+	"time"
 )
 
-var (
-	//	GenesisTime = inter.Timestamp(1651363200 * time.Second)
-	GenesisTime = inter.Timestamp(time.Now().UnixNano()) // use current time to avoid waiting for your validators to start
-	NetworkName = "ultron-devnet"
-)
+type Generator struct {
+	config *configs.GenesisConfig
+}
 
-func CreateGenesisStore(validatorBalance *big.Int, validatorStake *big.Int) *genesisstore.Store {
-	genStore := genesisstore.NewMemStore()
-	genStore.SetRules(CreateRules())
-	num, err := readLines("pks.txt")
-	if err != nil {
-		panic(err)
+func New(config *configs.GenesisConfig) *Generator {
+	return &Generator{
+		config: config,
 	}
+}
 
-	validators := GetValidators(len(num))
+func (g *Generator) CreateGenesisStore(ctx context.Context, pks []*ecdsa.PrivateKey) *genesisstore.Store {
+	genStore := genesisstore.NewMemStore()
+	genStore.SetRules(g.config.Rules)
 
+	validators := make(gpos.Validators, 0, len(pks))
 	totalSupply := new(big.Int)
-	for _, val := range validators {
+	for i := 1; i <= len(pks); i++ {
+		val := g.CreateValidator(idx.ValidatorID(i), pks[i-1])
 		genStore.SetEvmAccount(val.Address, genesis.Account{
 			Code:    []byte{},
-			Balance: validatorBalance,
+			Balance: g.config.ValidatorBalance,
 			Nonce:   0,
 		})
 		genStore.SetDelegation(val.Address, val.ID, genesis.Delegation{
-			Stake:              validatorStake,
+			Stake:              g.config.ValidatorStakedAmt,
 			Rewards:            new(big.Int),
 			LockedStake:        new(big.Int),
 			LockupFromEpoch:    0,
@@ -59,7 +56,8 @@ func CreateGenesisStore(validatorBalance *big.Int, validatorStake *big.Int) *gen
 			LockupDuration:     0,
 			EarlyUnlockPenalty: new(big.Int),
 		})
-		totalSupply.Add(totalSupply, validatorBalance)
+		totalSupply.Add(totalSupply, g.config.ValidatorBalance)
+		validators = append(validators, val)
 	}
 
 	var owner common.Address
@@ -67,30 +65,31 @@ func CreateGenesisStore(validatorBalance *big.Int, validatorStake *big.Int) *gen
 
 	genStore.SetMetadata(genesisstore.Metadata{
 		Validators:    validators,
-		FirstEpoch:    2,
-		Time:          GenesisTime,
-		PrevEpochTime: GenesisTime - inter.Timestamp(time.Hour),
-		ExtraData:     []byte(NetworkName),
+		FirstEpoch:    idx.Epoch(g.config.FirstEpoch),
+		Time:          g.config.GenesisTime,
+		PrevEpochTime: g.config.GenesisTime - inter.Timestamp(time.Hour),
+		ExtraData:     []byte(g.config.Rules.Name),
 		DriverOwner:   owner,
 		TotalSupply:   totalSupply,
 	})
+
 	ownerBalance := new(big.Int)
 	ownerBalance.SetString("47800000000000000000000000000", 10) //47.8 billions ulx
-
-	genStore.SetEvmAccount(common.HexToAddress("0xc5821b623bf772480880e7a343ff41e710b9fd8c"), genesis.Account{
+	genStore.SetEvmAccount(common.HexToAddress(g.config.EVMAccountAddress), genesis.Account{
 		Code:    []byte{},
 		Balance: ownerBalance,
 		Nonce:   0,
 	})
 
 	genStore.SetBlock(0, genesis.Block{
-		Time:        GenesisTime - inter.Timestamp(time.Minute),
+		Time:        g.config.BlockTime,
 		Atropos:     hash.Event{},
 		Txs:         types.Transactions{},
 		InternalTxs: types.Transactions{},
 		Root:        hash.Hash{},
 		Receipts:    []*types.ReceiptForStorage{},
 	})
+
 	// pre deploy NetworkInitializer
 	genStore.SetEvmAccount(netinit.ContractAddress, genesis.Account{
 		Code:    netinit.GetContractBin(),
@@ -126,73 +125,23 @@ func CreateGenesisStore(validatorBalance *big.Int, validatorStake *big.Int) *gen
 	return genStore
 }
 
-func GetValidators(num int) gpos.Validators {
-	validators := make(gpos.Validators, 0, num)
+func (g *Generator) CreateValidator(validatorID idx.ValidatorID, key *ecdsa.PrivateKey) gpos.Validator {
+	addr := crypto.PubkeyToAddress(key.PublicKey)
+	pubKeyRaw := crypto.FromECDSAPub(&key.PublicKey)
 
-	for i := 1; i <= num; i++ {
-		key := GetKey(i)
-		addr := crypto.PubkeyToAddress(key.PublicKey)
-		pubkeyraw := crypto.FromECDSAPub(&key.PublicKey)
-		validatorID := idx.ValidatorID(i)
-		validators = append(validators, gpos.Validator{
-			ID:      validatorID,
-			Address: addr,
-			PubKey: validatorpk.PubKey{
-				Raw:  pubkeyraw,
-				Type: validatorpk.Types.Secp256k1,
-			},
-			CreationTime:     GenesisTime,
-			CreationEpoch:    0,
-			DeactivatedTime:  0,
-			DeactivatedEpoch: 0,
-			Status:           0,
-		})
+	v := gpos.Validator{
+		ID:      validatorID,
+		Address: addr,
+		PubKey: validatorpk.PubKey{
+			Raw:  pubKeyRaw,
+			Type: validatorpk.Types.Secp256k1,
+		},
+		CreationTime:     g.config.GenesisTime,
+		CreationEpoch:    0,
+		DeactivatedTime:  0,
+		DeactivatedEpoch: 0,
+		Status:           0,
 	}
 
-	return validators
-}
-
-// gets private key X from file
-func GetKey(num int) *ecdsa.PrivateKey {
-	lines, err := readLines("pks.txt")
-	if err != nil {
-		panic(err)
-	}
-
-	key, err := crypto.HexToECDSA(lines[num-1])
-	if err != nil {
-		panic(err)
-	}
-
-	return key
-}
-
-// Read a whole file into the memory and store it as array of lines
-func readLines(path string) (lines []string, err error) {
-	var (
-		file   *os.File
-		part   []byte
-		prefix bool
-	)
-	if file, err = os.Open(path); err != nil {
-		return
-	}
-	defer file.Close()
-
-	reader := bufio.NewReader(file)
-	buffer := bytes.NewBuffer(make([]byte, 0))
-	for {
-		if part, prefix, err = reader.ReadLine(); err != nil {
-			break
-		}
-		buffer.Write(part)
-		if !prefix {
-			lines = append(lines, buffer.String())
-			buffer.Reset()
-		}
-	}
-	if err == io.EOF {
-		err = nil
-	}
-	return
+	return v
 }

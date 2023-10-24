@@ -1,0 +1,49 @@
+GenesisTime = 1656439608329323975
+BlockTime = 1656439548329323975
+FirstEpoch = 256
+EVMAccountAddress = "0x7a6a82103fc1ac90ade3a2e2ae004e33c463458b"
+ValidatorBalance = 10000000000000000000
+ValidatorStakedAmt = 100000000000000000000000000
+
+[Rules]
+Name = "ultron-devnet"
+NetworkID = 12300
+
+[Rules.Dag]
+MaxParents = 10
+MaxFreeParents = 3
+MaxExtraData = 128
+
+[Rules.Epochs]
+MaxEpochGas = 1500000000
+MaxEpochDuration = 14400000000000
+
+[Rules.Blocks]
+MaxBlockGas = 20500000
+MaxEmptyBlockSkipPeriod = 60000000000
+
+[Rules.Economy]
+BlockMissedSlack = 50
+MinGasPrice = 1000000000
+
+[Rules.Economy.Gas]
+MaxEventGas = 10028000
+EventGas = 28000
+ParentGas = 2400
+ExtraDataGas = 25
+
+[Rules.Economy.ShortGasPower]
+AllocPerSec = 5600000
+MaxAllocPeriod = 300000000000
+StartupAllocPeriod = 2500000000
+MinStartupGas = 560000
+
+[Rules.Economy.LongGasPower]
+AllocPerSec = 2800000
+MaxAllocPeriod = 3600000000000
+StartupAllocPeriod = 5000000000
+MinStartupGas = 560000
+
+[Rules.Upgrades]
+Berlin = false
+

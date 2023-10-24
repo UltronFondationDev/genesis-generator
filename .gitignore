@@ -1,2 +1,5 @@
-pks.txt
-/.history
+build/*
+.vscode
+.idea
+__test
+*.g
