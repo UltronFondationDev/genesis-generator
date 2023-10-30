@@ -8,7 +8,6 @@ import (
 	"github.com/UltronFoundationDev/genesis-generator/generator/genesis"
 	"github.com/UltronFoundationDev/genesis-generator/generator/pkeys"
 	"github.com/UltronFoundationDev/genesis-generator/pkeyreader"
-	"github.com/davecgh/go-spew/spew"
 	cli "github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -44,16 +43,12 @@ func main() {
 						pkeyS = append(pkeyS, pkeysAndress)
 					}
 
-					spew.Dump(pkeyS)
-
 					folderName := fmt.Sprintf("./keys_%d", time.Now().Unix())
 					if err := os.Mkdir(folderName, os.ModePerm); err != nil {
 						return cli.Exit(err, 1)
 					}
 
 					for i, pkey := range pkeyS {
-						fmt.Println(i)
-						fmt.Println(pkey.Public)
 						iter := i
 						filenamepubkey := fmt.Sprintf("%s/pubkey_%d.txt", folderName, iter)
 						filenameprivkey := fmt.Sprintf("%s/privkey_%d.txt", folderName, iter)
